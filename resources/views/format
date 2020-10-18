@@ -1,0 +1,5 @@
+admin/dashboard/turnover.blade.php:9:       <td>{{ $record->payment_at->format('m-d') }}</td>
+admin/dashboard/card.blade.php:5:                <div class="float-left">
+admin/dashboard/card.blade.php:9:                <div class="float-right">
+admin/withdraw/index.blade.php:41:                    <td>{{ $item->withdraw_at->format('m-d h:i') }}</td>
+admin/trade/table.blade.php:40:                <td>{{ $item->created_at->format('m-d H:i') }}</td>
