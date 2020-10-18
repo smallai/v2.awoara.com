@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\WeChat;
 
+use App\Http\Controllers\Alipay\VipCardController;
 use App\Models\Goods;
 use \App\Utils\IdGenerator;
 use App\Jobs\RefreshIotDeviceStateJob;
@@ -557,11 +558,12 @@ class WeChatPayController extends Controller
                     $trade['payment_status'] = Trade::PaymentStatus_Success;
                     $trade->paySign();
 
-                    //发送订单给设备
-                    $this->sendOrderToDevice($trade);
-
                     //保存月卡信息
-                    $this->saveVipCardInfo($trade);
+                    $card = $this->saveVipCardInfo($trade);
+
+                    //发送订单给设备
+                    $this->sendOrderToDevice($trade, $card);
+
                 }
             }
             else
@@ -586,7 +588,7 @@ class WeChatPayController extends Controller
     /*
      * 发送记录给设备。
      * */
-    public function sendOrderToDevice(Trade $trade)
+    public function sendOrderToDevice(Trade $trade, UserVipCard $card)
     {
         Log::debug('send order begin');
 
@@ -599,11 +601,11 @@ class WeChatPayController extends Controller
             return;
         }
 
-        if ($trade->goods_count > 1)
-        {
-            Log::debug('goods_count', ['trade' => $trade]);
-            return;
-        }
+//        if ($trade->goods_count > 1)
+//        {
+//            Log::debug('goods_count', ['trade' => $trade]);
+//            return;
+//        }
 
         //订单在２分钟以内
         if (Carbon::now()->diffInSeconds( $trade['payment_at']) >= 120)
@@ -618,6 +620,9 @@ class WeChatPayController extends Controller
             $trade['confirm_status'] = Trade::GoodsStatus_Confirmed;
             $trade['confirmed_at'] = Carbon::now();
             $trade->save();
+
+            $card->used_count++;
+            $card->save();
         }
 
         Log::debug('send order finished');
@@ -628,30 +633,31 @@ class WeChatPayController extends Controller
      * */
     public function saveVipCardInfo(Trade $trade)
     {
-        if ($trade['goods_count'] > 1)
-        {
-            $trade['confirm_status'] = Trade::GoodsStatus_Confirmed;
-            $trade['confirmed_at'] = Carbon::now();
-            $trade->save();
+        $trade['confirm_status'] = Trade::GoodsStatus_Confirmed;
+        $trade['confirmed_at'] = Carbon::now();
+        $trade->save();
 
-            $goods = Goods::where('id', $trade['goods_id'])->withTrashed()->first();
+        $goods = Goods::where('id', $trade['goods_id'])->withTrashed()->first();
 
-            $card = new UserVipCard();
-            $card['id'] = IdGenerator::vipCardId();
-            $card['user_id'] = Auth::user() ? Auth::user()->id : null;
-            $card['owner_id'] = $trade['owner_id'];
-            $card['device_id'] = $trade['device_id'];
-            $card['trade_id'] = $trade['id'];
-            $card['user_openid'] = $trade['user_openid'];
+        $card = new UserVipCard();
+        $card['id'] = IdGenerator::vipCardId();
+        $card['user_id'] = Auth::user() ? Auth::user()->id : null;
+        $card['owner_id'] = $trade['owner_id'];
+        $card['device_id'] = $trade['device_id'];
+        $card['trade_id'] = $trade['id'];
+        $card['user_openid'] = $trade['user_openid'];
 
-            $card['seconds'] = $trade['goods_seconds'];
-            $card['days'] = $trade['goods_days'];
-            $card['goods_name'] = $trade['goods_name'];
-            $card['used_count'] = 0;
-            $card['total_count'] = $trade['goods_count'];
-            $card['today_limit'] = isset($goods) ? $goods->today_limit : 3;
-            $card['expiration'] = Carbon::now()->addDays($card['days']);
-            $card->save();
-        }
+        $days = isset($goods) ? (int)$goods->today_limit : 3;
+        $card['seconds'] = $trade['goods_seconds'];
+        $card['days'] = $trade['goods_days'];
+        $card['goods_name'] = $trade['goods_name'];
+        $card['used_count'] = 0;
+        $card['total_count'] = $trade['goods_count'];
+        $card['today_limit'] = $days > 3 ? $days : 3;
+        $card['expiration'] = Carbon::now()->addDays($card['days']);
+        $card->save();
+
+        return $card;
     }
 }
+

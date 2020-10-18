@@ -219,20 +219,20 @@ class AlipayController extends Controller
             if ($this->checkTradeIsValid($data, $trade)) {
                 $this->updatePaymentStatus($trade, $data);
 
-                if ($trade['goods_count'] > 1)
+//                if ($trade['goods_count'] > 1)
                 {
-                    $this->processMore($trade);
                     $card = $this->saveUserVipCardInfo($trade);
+                    $this->Process($trade, $card);
                     return redirect()->route('alipay.showCardInfo', [
                         'device_id' => $trade['device_id'],
                         'card_id' => $card['id'],
                     ]);
                 }
-                else
-                {
-                    $this->processOne($trade);
-                    return view('alipay.success', compact('trade'));
-                }
+//                else
+//                {
+//                    $this->Process($trade);
+//                    return view('alipay.success', compact('trade'));
+//                }
             }
         }
 //        catch (\Exception $exception)
@@ -265,9 +265,9 @@ class AlipayController extends Controller
                 if ($this->checkTradeIsValid($data, $trade)) {
                     $this->updatePaymentStatus($trade, $data);
 //                    $this->dispatch(new PushMessageTask($trade->id));
-                    $this->processOne($trade);
-                    $this->processMore($trade);
                     $card = $this->saveUserVipCardInfo($trade);
+                    $this->Process($trade, $card);
+//                    $this->processMore($trade);
                     Log::debug('alipay notify success', [$trade]);
                     return $alipay->success();
                 }
@@ -472,10 +472,9 @@ class AlipayController extends Controller
     }
 
     //处理单次洗车的记录
-    protected function ProcessOne(Trade $trade)
+    protected function Process(Trade $trade, UserVipCard $card)
     {
-        if (($trade['payment_status'] == Trade::PaymentStatus_Success)
-            && ($trade['goods_count'] == 1)) {
+        if (($trade['payment_status'] == Trade::PaymentStatus_Success)) {
             //没有推送消息
             if ($trade['confirm_status'] != Trade::GoodsStatus_Confirmed) {
                 //在２分钟之内
@@ -489,6 +488,9 @@ class AlipayController extends Controller
                         $trade['confirm_status'] = Trade::GoodsStatus_Confirmed;
                         $trade['confirmed_at'] = Carbon::now();
                         $trade->save();
+
+                        $card->used_count++;
+                        $card->save();
 
                         Log::info('send network order success', [
                             'trade_id' => $trade['id']
@@ -511,17 +513,17 @@ class AlipayController extends Controller
         }
     }
 
-    //处理可以多次使用的记录
-    protected function processMore(Trade $trade)
-    {
-        if (($trade['payment_status'] === Trade::PaymentStatus_Success)
-            && ($trade['goods_count'] > 1))
-        {
-            $trade['confirm_status'] = Trade::GoodsStatus_Confirmed;
-            $trade['confirmed_at'] = Carbon::now();
-            $trade->save();
-        }
-    }
+//    //处理可以多次使用的记录
+//    protected function processMore(Trade $trade)
+//    {
+//        if (($trade['payment_status'] === Trade::PaymentStatus_Success)
+//            && ($trade['goods_count'] > 1))
+//        {
+//            $trade['confirm_status'] = Trade::GoodsStatus_Confirmed;
+//            $trade['confirmed_at'] = Carbon::now();
+//            $trade->save();
+//        }
+//    }
 
     // 请自行对 trade_status 进行判断及其它逻辑进行判断，在支付宝的业务通知中，只有交易通知状态为
     // TRADE_SUCCESS 或 TRADE_FINISHED 时，支付宝才会认定为买家付款成功。
@@ -623,7 +625,7 @@ class AlipayController extends Controller
     {
         $card = null;
 
-        if (($trade['payment_status'] === Trade::PaymentStatus_Success) && ($trade['goods_count'] > 1))
+        if (($trade['payment_status'] === Trade::PaymentStatus_Success))
         {
             $card = UserVipCard::where('trade_id', $trade['id'])->first();
             if (!isset($card))

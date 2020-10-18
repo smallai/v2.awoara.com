@@ -3,7 +3,9 @@
 namespace App\Utils;
 
 use App\Models\Device;
+use App\Models\Trade;
 use App\Scopes\DeviceScope;
+use Carbon\Carbon;
 use Illuminate\Support\Facades\Log;
 use Mrgoon\AliIot\AliIot;
 
@@ -74,7 +76,13 @@ class IotDevice
          ]);
 //         return $response;
          Log::debug('push order', ['orderId' => $orderId, 'seconds' => $seconds]);
-         return ($response) && (0 === $this->responsePayload['status']);
+         $result = ($response) && (0 === $this->responsePayload['status']);
+         if ($result) {
+             $trade['confirm_status'] = Trade::GoodsStatus_Confirmed;
+             $trade['confirmed_at'] = Carbon::now();
+             $trade->save();
+         }
+         return $result;
     }
 
     public function orderFinish()
