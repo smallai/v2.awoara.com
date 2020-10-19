@@ -364,7 +364,7 @@ class Trade extends Model
         ],
 
         'confirm_status' => [
-            Trade::GoodsStatus_None => '推送失败',
+            Trade::GoodsStatus_None => '未推送',
             Trade::GoodsStatus_Confirmed => '已推送',
         ],
 
