@@ -360,7 +360,7 @@ class Trade extends Model
             Trade::PaymentStatus_None => '未支付',
             Trade::PaymentStatus_Processing => '待付款',
             Trade::PaymentStatus_Success => '已付款',
-            Trade::PaymentStatus_Failed => '付款失败',
+            Trade::PaymentStatus_Failed => '未付款',
         ],
 
         'confirm_status' => [
