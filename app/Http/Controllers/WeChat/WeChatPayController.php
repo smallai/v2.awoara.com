@@ -506,7 +506,6 @@ class WeChatPayController extends Controller
         //已经支付成功的记录
         if ($trade['payment_status'] === Trade::PaymentStatus_Success)
         {
-            $this->sendOrderToDevice($trade);
             Log::debug('order processed', [$trade]);
             return true;
         }
