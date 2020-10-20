@@ -37,7 +37,11 @@
                 <tr>
             @endif
                 <td>
+                    @if(($item['payment_type'] === \App\Models\Trade::PaymentType_Alipay) || ($item['payment_type'] === \App\Models\Trade::PaymentType_WeChat))
                     <a href="{{ route('trade.show', $item->id) }}">{{ $item->id }}</a>
+                    @else
+                        {{ $item->id }}
+                    @endif
                 </td>
                 <td>{{ optional($item->created_at)->format('m-d H:i') }}</td>
                 <td><a href="{{ route('device.show', $item->device_id) }}">{{ optional($item->device)->name }}</a></td>

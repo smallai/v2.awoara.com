@@ -13,6 +13,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use App\Http\Controllers\Controller;
+use Illuminate\Support\Str;
 
 class UserVipCardController extends Controller
 {
@@ -87,7 +88,9 @@ class UserVipCardController extends Controller
             return view('alipay.error')->withErrors(['会员卡当天可用次数已用完，请购买单次使用的套餐！']);
         }
 
-        return view('wechat.cardInfo', compact('card', 'device'));
+        $token = (string)Str::uuid();
+        session()->push('token', $token);
+        return view('wechat.cardInfo', compact('card', 'device', 'token'));
     }
 
     /*
@@ -97,6 +100,14 @@ class UserVipCardController extends Controller
     {
         $card_id = $request->input('card_id', -1);
         $device_id = $request->input('device_id', -1);
+
+        $token = $request->input('token');
+        $data = session()->pull('token');
+        $oldToken = $data ? $data[0] : null;
+        if ($oldToken !== $token) {
+            Log::debug('token miss match', ['token' => $token, 'oldToken' => $oldToken]);
+            return redirect()->route('wechat.error')->withErrors(['请勿重复提交！']);
+        }
 
         $device = Device::find($device_id);
         if (!$device)

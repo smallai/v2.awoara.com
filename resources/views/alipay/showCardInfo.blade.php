@@ -27,9 +27,10 @@
             <form action="{{ route('alipay.carWash') }}" method="POST">
                 {{ csrf_field() }}
                 {{ method_field('POST') }}
+                <input type="hidden" name="token" value="{{ $token }}">
                 <input type="hidden" name="device_id" value="{{ $device->id }}">
                 <input type="hidden" name="card_id" value="{{ $card->id }}">
-                <button type="submit" class="weui-btn weui-btn_primary">我要洗车</button>
+                <button type="submit" class="weui-btn weui-btn_primary" id="submit_btn">我要洗车</button>
             </form>
             <br>
         </div>
@@ -51,4 +52,13 @@
 @endsection
 
 @section('script')
+    <script>
+        $(function () {
+            $('#submit_btn').on('click', function () {
+                $(this).attr('disabled',true);
+                $(this).val('正在处理...');
+                this.form.submit();
+            })
+        });
+    </script>
 @endsection

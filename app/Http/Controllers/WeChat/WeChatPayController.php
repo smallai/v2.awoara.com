@@ -433,8 +433,8 @@ class WeChatPayController extends Controller
         ];
         $result = $app->order->unify($order);
 
-        Log::debug($order);
-        Log::debug($result);
+        Log::debug('order', ['order' => $order]);
+        Log::debug('result', ['result' => $result]);
 
         return array_key_exists('prepay_id', $result) ? $result['prepay_id'] : '';
     }
@@ -562,7 +562,6 @@ class WeChatPayController extends Controller
 
                     //发送订单给设备
                     $this->sendOrderToDevice($trade, $card);
-
                 }
             }
             else

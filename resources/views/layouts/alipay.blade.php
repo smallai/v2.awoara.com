@@ -12,6 +12,7 @@
 
 {{--    <title>石斑鱼</title>--}}
     <link rel="stylesheet" href="{{ asset('css/weui.min.css') }}" />
+    <script src="{{ asset('js/zepto.min.js') }}"></script>
 </head>
 <body>
 

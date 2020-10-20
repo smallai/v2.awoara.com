@@ -13,6 +13,7 @@
 {{--    <title>石斑鱼</title>--}}
     <link rel="stylesheet" href="{{ asset('css/weui.min.css') }}" />
     <script src="https://res.wx.qq.com/open/js/jweixin-1.0.0.js"></script>
+    <script src="{{ asset('js/zepto.min.js') }}"></script>
 </head>
 <body>
 

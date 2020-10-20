@@ -13,6 +13,7 @@ use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Session;
+use Illuminate\Support\Str;
 
 class VipCardController extends Controller
 {
@@ -77,7 +78,9 @@ class VipCardController extends Controller
         //保存扫码的时候的用户ip
         Session::put('user_ip', $request->getClientIp());
 
-        return view('alipay.showCardInfo', compact('device', 'card'));
+        $token = Str::uuid();
+        session()->push('token', $token);
+        return view('alipay.showCardInfo', compact('device', 'card', 'token'));
     }
 
     /*
@@ -88,6 +91,13 @@ class VipCardController extends Controller
         $device_id = $request->input('device_id', -1);
         $card_id = $request->input('card_id', -1);
 
+        $token = $request->input('token');
+        $data = session()->pull('token');
+        $oldToken = $data ? $data[0] : null;
+        if ($oldToken !== $token) {
+            Log::debug('token miss match', ['token' => $token, 'oldToken' => $oldToken]);
+            return redirect()->route('wechat.error')->withErrors(['请勿重复提交！']);
+        }
         //获取设备信息
         $device = Device::find($device_id);
         if (!$device)
@@ -126,11 +136,11 @@ class VipCardController extends Controller
             return view('alipay.error')->withErrors(['会员卡已过期，请重新购买！']);
         }
 
-        $trade_id = IdGenerator::tradeId();
+        $tradeId = IdGenerator::tradeId();
 
-        if ($this->sendOrder($device->id, $trade_id, $card->seconds))
+        if ($this->sendOrder($device->id, $tradeId, $card->seconds))
         {
-            $trade = $this->saveRecord($device, $trade_id, $card);
+            $trade = $this->saveRecord($device, $tradeId, $card);
             return redirect()->route('alipay.success', [
                 'device_id' => $device->id,
                 'trade_id' => $trade->id,
