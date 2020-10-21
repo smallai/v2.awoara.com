@@ -54,9 +54,9 @@
 @section('script')
     <script>
         $(function () {
-            $('#submit_btn').on('click', function () {
+            $('#submit_btn').one('click', function () {
                 $(this).attr('disabled',true);
-                $(this).val('正在处理...');
+                $(this).html('正在处理...');
                 this.form.submit();
             })
         });

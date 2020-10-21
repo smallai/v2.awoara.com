@@ -78,7 +78,7 @@ class VipCardController extends Controller
         //保存扫码的时候的用户ip
         Session::put('user_ip', $request->getClientIp());
 
-        $token = Str::uuid();
+        $token = (string)Str::uuid();
         session()->push('token', $token);
         return view('alipay.showCardInfo', compact('device', 'card', 'token'));
     }
@@ -96,7 +96,7 @@ class VipCardController extends Controller
         $oldToken = $data ? $data[0] : null;
         if ($oldToken !== $token) {
             Log::debug('token miss match', ['token' => $token, 'oldToken' => $oldToken]);
-            return redirect()->route('wechat.error')->withErrors(['请勿重复提交！']);
+            return redirect()->route('alipay.error')->withErrors(['请勿重复提交！']);
         }
         //获取设备信息
         $device = Device::find($device_id);
